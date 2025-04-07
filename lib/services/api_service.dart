@@ -103,4 +103,25 @@ class ApiService {
       rethrow;
     }
   }
+
+  static Future<void> logout(String accessToken, String refreshToken) async {
+    try {
+      print('Logout with endpoint: ${_dio.options.baseUrl}/logout');
+      final response = await _dio.post(
+        '/logout',
+        data: {
+          'refresh_token': refreshToken,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+          },
+        ),
+      );
+      print('Logout response: ${response.data}');
+    } catch (e) {
+      print('API Service Logout Error: $e');
+      rethrow;
+    }
+  }
 }
