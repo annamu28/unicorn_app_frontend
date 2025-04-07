@@ -1,30 +1,35 @@
-import 'package:unicorn_app_frontend/state/auth_result.dart';
+import 'package:flutter/foundation.dart';
+import 'auth_result.dart';
 
+@immutable
 class AuthState {
-  final AuthResult result;
   final bool isLoading;
+  final AuthResult result;
   final String? token;
+  final bool isAuthenticated;
+  final Map<String, dynamic>? userInfo;
 
   const AuthState({
-    this.result = AuthResult.unknown,
     this.isLoading = false,
+    this.result = AuthResult.none,
     this.token,
+    this.isAuthenticated = false,
+    this.userInfo,
   });
 
-  const AuthState.unknown()
-      : result = AuthResult.unknown,
-        isLoading = false,
-        token = null;
-
   AuthState copyWith({
-    AuthResult? result,
     bool? isLoading,
+    AuthResult? result,
     String? token,
+    bool? isAuthenticated,
+    Map<String, dynamic>? userInfo,
   }) {
     return AuthState(
-      result: result ?? this.result,
       isLoading: isLoading ?? this.isLoading,
+      result: result ?? this.result,
       token: token ?? this.token,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      userInfo: userInfo ?? this.userInfo,
     );
   }
 }

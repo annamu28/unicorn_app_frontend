@@ -29,11 +29,23 @@ class _LoginViewState extends ConsumerState<LoginView> {
 
   Future<void> _attemptLogin() async {
     if (_formKey.currentState!.validate()) {
-      final email = _emailController.text;
-      final password = _passwordController.text;
-      //controller is given to provider function
-      final authProvider = ref.read(authenticationProvider.notifier);
-      await authProvider.loginWithEmailAndPassword(email, password);
+      try {
+        await ref.read(authenticationProvider.notifier).loginWithEmailAndPassword(
+          _emailController.text,
+          _passwordController.text,
+        );
+        
+        // After successful login, navigate to main view
+        if (mounted && ref.read(authenticationProvider).isAuthenticated) {
+          context.go('/main');  // Using GoRouter to navigate to main view
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login failed: ${e.toString()}')),
+          );
+        }
+      }
     }
   }
 

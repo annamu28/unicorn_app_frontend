@@ -3,4 +3,5 @@ enum AuthResult {
   failure,
   unknown,
   alreadyExists,
+  none
 }

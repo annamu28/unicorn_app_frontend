@@ -22,6 +22,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  DateTime? _selectedDate;
 
   @override
   void dispose() {
@@ -32,16 +33,43 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     super.dispose();
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
   Future<void> _attemptRegister() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && _selectedDate != null) {
       final firstName = _firstNameController.text;
       final lastName = _lastNameController.text;
       final email = _emailController.text;
       final password = _passwordController.text;
-      //controller is given to provider function
+      final birthdate = _selectedDate!;
+      
       final authProvider = ref.read(authenticationProvider.notifier);
       await authProvider.registerWithEmailAndPassword(
-          firstName, lastName, email, password);
+        firstName, 
+        lastName, 
+        email, 
+        password,
+        birthdate,
+      );
+    } else if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select your birthdate'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -52,9 +80,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       context.pop();
     });
 
-    ref.listen(authenticationProvider,
-        (AuthState? previous, AuthState current) {
-      // We check if the state is not loading and login failed
+    ref.listen(authenticationProvider, (AuthState? previous, AuthState current) {
       if (current.result == AuthResult.alreadyExists && !current.isLoading) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -63,7 +89,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
           ),
         );
       } else if (current.result == AuthResult.success && !current.isLoading) {
-        context.go('/avatar'); // Navigate to AvatarView
+        // Navigate to avatar view after successful registration
+        context.go('/avatar');
+      } else if (current.result == AuthResult.failure && !current.isLoading) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration failed. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     });
 
@@ -145,6 +179,36 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                 ),
                 obscureText: true,
                 validator: validateName,
+              ),
+              const SizedBox(height: 16),
+              // Add birthdate field
+              InkWell(
+                onTap: () => _selectDate(context),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'Birthdate',
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(width: 3, color: Colors.black),
+                      borderRadius: BorderRadius.circular(50.0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedDate != null
+                            ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                            : 'Select your birthdate',
+                        style: TextStyle(
+                          color: _selectedDate != null
+                              ? Colors.black
+                              : Colors.grey[600],
+                        ),
+                      ),
+                      const Icon(Icons.calendar_today),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               TextButton(

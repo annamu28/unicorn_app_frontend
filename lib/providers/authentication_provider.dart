@@ -1,79 +1,115 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:unicorn_app_frontend/services/api_service.dart';
-import 'package:unicorn_app_frontend/state/auth_result.dart';
-import 'package:unicorn_app_frontend/state/auth_state.dart';
+import '../services/api_service.dart';
+import '../state/auth_state.dart';
+import '../state/auth_result.dart';
 
 class AuthenticationNotifier extends StateNotifier<AuthState> {
-  final ApiService _apiService;
-
-  AuthenticationNotifier({ApiService? apiService})
-      : _apiService = apiService ?? ApiService(),
-        super(AuthState.unknown());
+  AuthenticationNotifier() : super(const AuthState());
 
   Future<void> loginWithEmailAndPassword(String email, String password) async {
-    state = state.copyWith(isLoading: true);
-
     try {
-      final response = await _apiService.login(email, password);
+      state = state.copyWith(isLoading: true, result: AuthResult.none);
+      
+      final response = await ApiService.login(email, password);
+      
+      // Debug prints
+      print('Login response: $response');
+      
+      if (response is Map<String, dynamic>) {
+        final token = response['access_token'] as String?;
+        final refreshToken = response['refresh_token'] as String?;
+        final userId = response['user_id'];
+        final firstName = response['first_name'] as String?;
+        final lastName = response['last_name'] as String?;
+        final userEmail = response['email'] as String?;
 
-      if (response['result'] == 'success') {
-        // Store the token securely (consider using flutter_secure_storage)
+        if (token == null) {
+          throw Exception('Token is null in response');
+        }
+
         state = state.copyWith(
-          result: AuthResult.success,
           isLoading: false,
-          token: response['token'],
+          result: AuthResult.success,
+          token: token,
+          isAuthenticated: true,
+          userInfo: {
+            'first_name': firstName ?? '',
+            'last_name': lastName ?? '',
+            'email': userEmail ?? '',
+            'user_id': userId,
+            'refresh_token': refreshToken,
+          },
         );
       } else {
-        state = state.copyWith(
-          result: AuthResult.failure,
-          isLoading: false,
-        );
+        throw Exception('Invalid response format');
       }
     } catch (e) {
+      print('Login error: $e');
       state = state.copyWith(
-        result: AuthResult.failure,
         isLoading: false,
+        result: AuthResult.failure,
       );
+      rethrow;
     }
   }
 
   Future<void> registerWithEmailAndPassword(
-      String firstName, String lastName, String email, String password) async {
-    state = state.copyWith(isLoading: true);
-
+    String firstName,
+    String lastName,
+    String email,
+    String password,
+    DateTime birthdate,
+  ) async {
     try {
-      final response = await _apiService.register(firstName, lastName, email, password);
-
-      if (response['token'] != null) {
-        state = state.copyWith(
-          result: AuthResult.success,
-          isLoading: false,
-          token: response['token'],
-        );
-      } else {
-        // Check for specific error messages
-        if (response['error'] == 'Email already exists') {
-          state = state.copyWith(
-            result: AuthResult.alreadyExists,
-            isLoading: false,
-          );
-        } else {
-          state = state.copyWith(
-            result: AuthResult.failure,
-            isLoading: false,
-          );
-        }
-      }
-    } catch (e) {
-      state = state.copyWith(
-        result: AuthResult.failure,
-        isLoading: false,
+      state = state.copyWith(isLoading: true, result: AuthResult.none);
+      
+      final Map<String, dynamic> response = await ApiService.register(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+        birthday: birthdate,
       );
+
+      if (response.containsKey('error')) {
+        state = state.copyWith(
+          isLoading: false,
+          result: AuthResult.failure,
+        );
+        return;
+      }
+
+      final token = response['access_token'] as String;
+      final userInfo = {
+        'first_name': response['first_name'],
+        'last_name': response['last_name'],
+        'email': response['email'],
+        'user_id': response['user_id'],
+        'refresh_token': response['refresh_token'],
+      };
+
+      print('Registration response: $response');
+      print('User info: $userInfo');
+
+      state = state.copyWith(
+        isLoading: false,
+        result: AuthResult.success,
+        token: token,
+        isAuthenticated: true,
+        userInfo: userInfo,
+      );
+    } catch (e) {
+      print('Registration error: $e');
+      state = state.copyWith(
+        isLoading: false,
+        result: AuthResult.failure,
+      );
+      rethrow;
     }
   }
 
   void logout() {
-    state = AuthState.unknown();  // Reset to initial state
+    state = AuthState();
   }
 }
 
@@ -82,9 +118,6 @@ final authenticationProvider =
   return AuthenticationNotifier();
 });
 
-final authenticationNotifier = authenticationProvider.notifier;
-
 final isLoggedInProvider = Provider<bool>((ref) {
-  final authState = ref.watch(authenticationProvider);
-  return authState.token != null && authState.result == AuthResult.success;
+  return ref.watch(authenticationProvider).isAuthenticated;
 });

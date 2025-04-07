@@ -53,6 +53,8 @@ class Strings {
 
   static const settings = 'Settings';
 
+  static const tokens = 'Tokens';
+
   static const chatboards = 'Chatboards';
   static const register = 'Register';
 
