@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../models/chatboard_model.dart';
 import '../../../providers/chatboard_provider.dart';
 import '../../../providers/post_provider.dart';
+import '../../../providers/user_provider.dart';
 import '../../../views/comment/comment_view.dart';
 import '../../../providers/authentication_provider.dart';
 
@@ -31,16 +32,50 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
 
   Future<void> _fetchChatboardTitle() async {
     try {
-      final response = await ref.read(chatboardServiceProvider).getChatboards();
-      final chatboard = response.firstWhere(
-        (board) => board.id.toString() == widget.chatboardId,
-        orElse: () => throw Exception('Chatboard not found'),
-      );
-      setState(() {
-        chatboardTitle = chatboard.title;
-      });
+      final chatboard = await ref.read(chatboardProvider(widget.chatboardId).future);
+      if (chatboard != null && mounted) {
+        setState(() {
+          chatboardTitle = chatboard.title;
+        });
+      } else if (mounted) {
+        // User doesn't have access to this chatboard or chatboard not found
+        setState(() {
+          chatboardTitle = 'Access Denied';
+        });
+        // Show a snackbar to inform the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You do not have access to this chatboard or it does not exist'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // Navigate back after a short delay
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            context.pop();
+          }
+        });
+      }
     } catch (e) {
       print('Error fetching chatboard title: $e');
+      if (mounted) {
+        setState(() {
+          chatboardTitle = 'Error';
+        });
+        // Show a snackbar to inform the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading chatboard: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // Navigate back after a short delay
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            context.pop();
+          }
+        });
+      }
     }
   }
 
@@ -48,52 +83,69 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authenticationProvider);
     final postsAsync = ref.watch(postsProvider(widget.chatboardId));
+    final userAsync = ref.watch(userProvider);
     
-    return postsAsync.when(
-      data: (posts) {
-        final userRoles = posts.isNotEmpty 
-          ? posts.firstWhere(
-              (post) => post.userId == authState.userInfo?['id'],
-              orElse: () => posts.first,
-            ).author.roles
-          : [];
-        
-        print('Current user roles from posts: $userRoles');
-        final isSpecialRole = userRoles.contains('peasarvik') || 
-                             userRoles.contains('abisarvik') || 
-                             userRoles.contains('Admin');
+    // If the chatboard title is 'Access Denied', show a loading indicator
+    // The _fetchChatboardTitle method will handle navigation back
+    if (chatboardTitle == 'Access Denied') {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    return userAsync.when(
+      data: (user) {
+        final isSpecialRole = user.hasAnyRole(['Admin', 'Abisarvik', 'Peasarvik']);
+        print('User roles: ${user.roles}');
+        print('Is special role: $isSpecialRole');
 
-        return DefaultTabController(
-          length: isSpecialRole ? 2 : 1,
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text(chatboardTitle ?? 'Loading...'),
-              bottom: PreferredSize(
-                preferredSize: isSpecialRole ? const Size.fromHeight(48.0) : const Size.fromHeight(0),
-                child: isSpecialRole 
-                  ? const TabBar(
-                      labelColor: Colors.black,
-                      tabs: [
-                        Tab(text: 'Posts'),
-                        Tab(text: 'Teacher'),
+        return postsAsync.when(
+          data: (posts) {
+            return DefaultTabController(
+              length: isSpecialRole ? 2 : 1,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Text(chatboardTitle ?? 'Loading...'),
+                  bottom: PreferredSize(
+                    preferredSize: isSpecialRole ? const Size.fromHeight(48.0) : const Size.fromHeight(0),
+                    child: isSpecialRole 
+                      ? const TabBar(
+                          labelColor: Colors.black,
+                          tabs: [
+                            Tab(text: 'Posts'),
+                            Tab(text: 'Teacher'),
+                          ],
+                        )
+                      : Container(),
+                  ),
+                ),
+                body: isSpecialRole 
+                  ? TabBarView(
+                      children: [
+                        _PostsTab(chatboardId: widget.chatboardId),
+                        _TeacherTab(chatboardId: widget.chatboardId),
                       ],
                     )
-                  : Container(),
+                  : _PostsTab(chatboardId: widget.chatboardId),
+                floatingActionButton: FloatingActionButton(
+                  onPressed: () {
+                    context.push('/add-post/${widget.chatboardId}');
+                  },
+                  child: const Icon(Icons.add),
+                ),
               ),
+            );
+          },
+          loading: () => const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
             ),
-            body: isSpecialRole 
-              ? TabBarView(
-                  children: [
-                    _PostsTab(chatboardId: widget.chatboardId),
-                    _TeacherTab(chatboardId: widget.chatboardId),
-                  ],
-                )
-              : _PostsTab(chatboardId: widget.chatboardId),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                context.push('/add-post/${widget.chatboardId}');
-              },
-              child: const Icon(Icons.add),
+          ),
+          error: (error, _) => Scaffold(
+            body: Center(
+              child: Text('Error: $error'),
             ),
           ),
         );
@@ -105,7 +157,7 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
       ),
       error: (error, _) => Scaffold(
         body: Center(
-          child: Text('Error: $error'),
+          child: Text('Error loading user info: $error'),
         ),
       ),
     );

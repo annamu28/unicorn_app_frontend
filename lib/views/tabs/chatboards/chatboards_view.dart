@@ -9,10 +9,10 @@ class ChatboardsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatboardsAsync = ref.watch(chatboardsProvider);
+    final chatboardsAsync = ref.watch(chatboardsProvider(null));
 
     return RefreshIndicator(
-      onRefresh: () => ref.refresh(chatboardsProvider.future),
+      onRefresh: () => ref.refresh(chatboardsProvider(null).future),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: chatboardsAsync.when(

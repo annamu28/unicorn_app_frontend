@@ -33,7 +33,7 @@ class PostService {
           int commentCount = 0;
           try {
             final commentsResponse = await _dio.get('/comments?post_id=$postId');
-            if (commentsResponse.data is List) {
+            if (commentsResponse.data != null && commentsResponse.data is List) {
               commentCount = (commentsResponse.data as List).length;
             }
             print('Comment count for post $postId: $commentCount');

@@ -46,13 +46,20 @@ class CommentService {
       try {
         final postResponse = await _dio.get('/posts/$postId');
         print('Post access check response: ${postResponse.data}');
+        
+        // Check if the post exists and is accessible
+        if (postResponse.data == null) {
+          throw Exception('Post not found');
+        }
       } catch (e) {
         print('Error checking post access: $e');
         if (e is DioException && e.response?.statusCode == 403) {
           throw Exception('You do not have permission to comment on this post');
         }
+        rethrow;
       }
       
+      // Create the comment
       final response = await _dio.post(
         '/comments',
         data: {

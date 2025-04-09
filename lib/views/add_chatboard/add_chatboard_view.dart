@@ -187,7 +187,7 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
 
       if (success && mounted) {
         // Refresh the chatboards list
-        ref.refresh(chatboardsProvider);
+        ref.refresh(chatboardsProvider(null));
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Chatboard created successfully')),

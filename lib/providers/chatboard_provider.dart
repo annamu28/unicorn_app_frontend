@@ -3,30 +3,37 @@ import 'package:unicorn_app_frontend/providers/authentication_provider.dart';
 import '../models/chatboard_model.dart';
 import '../services/chatboard_service.dart';
 import '../services/dio_provider.dart';
+import 'user_provider.dart';
 
-final chatboardServiceProvider = Provider((ref) {
+final chatboardServiceProvider = Provider<ChatboardService>((ref) {
   final dio = ref.watch(authenticatedDioProvider);
   return ChatboardService(dio);
 });
 
-final chatboardsProvider = FutureProvider<List<Chatboard>>((ref) async {
-  final authState = ref.watch(authenticationProvider);
+final chatboardsProvider = FutureProvider.family<List<Chatboard>, String?>((ref, country) async {
   final chatboardService = ref.watch(chatboardServiceProvider);
+  final userAsync = ref.watch(userProvider);
   
-  // Get user's filters from auth state
-  final userInfo = authState.userInfo;
-  final country = userInfo?['countries']?[0] as String?;
-  final squad = userInfo?['squads']?[0]?['name'] as String?;
-  final role = userInfo?['squads']?[0]?['roles']?[0] as String?;
-
-  return chatboardService.getChatboards(
-    country: country,
-    squad: squad,
-    role: role,
+  return userAsync.when(
+    data: (user) => chatboardService.getChatboards(
+      country: country,
+      user: user,
+    ),
+    loading: () => [],
+    error: (_, __) => [],
   );
 });
 
 final chatboardProvider = FutureProvider.family<Chatboard?, String>((ref, chatboardId) async {
   final chatboardService = ref.watch(chatboardServiceProvider);
-  return chatboardService.getChatboard(chatboardId);
+  final userAsync = ref.watch(userProvider);
+  
+  return userAsync.when(
+    data: (user) => chatboardService.getChatboard(
+      chatboardId,
+      user: user,
+    ),
+    loading: () => null,
+    error: (_, __) => null,
+  );
 }); 
