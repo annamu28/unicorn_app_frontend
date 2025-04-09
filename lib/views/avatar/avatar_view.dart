@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unicorn_app_frontend/providers/authentication_provider.dart';
 import 'package:unicorn_app_frontend/providers/avatar_providers.dart';
+import 'package:unicorn_app_frontend/providers/user_provider.dart';
 import 'package:unicorn_app_frontend/services/dio_provider.dart';
 import '../../models/avatar_models.dart';
 import '../../services/avatar_service.dart';
@@ -438,6 +439,13 @@ class _AvatarViewState extends ConsumerState<AvatarView> {
         squadRoles: _squadRoles,
         countryId: _selectedCountry!.id,
       );
+      
+      // Refresh user data after creating avatar
+      print('Refreshing user data after avatar creation');
+      ref.invalidate(userProvider);
+      
+      // Wait for user data to be refreshed
+      await Future.delayed(const Duration(milliseconds: 500));
       
       if (mounted) {
         context.go('/main');
