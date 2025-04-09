@@ -45,8 +45,8 @@ class _CommentViewState extends ConsumerState<CommentView> {
         _commentController.clear();
         // Refresh comments list
         ref.refresh(commentsProvider(widget.postId));
-        // Refresh posts to update comment count
-        ref.read(post.refreshPostsProvider)(widget.chatboardId);
+        // Refresh the posts after adding a comment
+        ref.invalidate(post.postsProvider(widget.chatboardId));
       }
     } catch (e) {
       if (mounted) {

@@ -56,15 +56,45 @@ class User {
   }
 
   bool hasRole(String role) {
-    return roles.contains(role);
+    // Check top-level roles
+    if (roles.contains(role)) {
+      return true;
+    }
+    
+    // Check roles in all squads
+    return squads.any((squad) => squad.hasRole(role));
   }
 
   bool hasAnyRole(List<String> roles) {
-    return this.roles.any((role) => roles.contains(role));
+    // Check top-level roles
+    if (this.roles.any((role) => roles.contains(role))) {
+      return true;
+    }
+    
+    // Check roles in all squads
+    return squads.any((squad) => squad.hasAnyRole(roles));
   }
 
   bool hasAllRoles(List<String> roles) {
-    return roles.every((role) => this.roles.contains(role));
+    // Check top-level roles
+    if (!this.roles.every((role) => roles.contains(role))) {
+      return false;
+    }
+    
+    // Check roles in all squads
+    return squads.every((squad) => squad.hasAllRoles(roles));
+  }
+
+  // Get all roles across all squads
+  List<String> getAllRoles() {
+    final Set<String> allRoles = Set<String>.from(roles);
+    
+    // Add roles from all squads
+    for (final squad in squads) {
+      allRoles.addAll(squad.roles);
+    }
+    
+    return allRoles.toList();
   }
 
   bool hasRoleInSquad(String role, int squadId) {

@@ -8,6 +8,7 @@ import 'package:unicorn_app_frontend/views/avatar/avatar_view.dart';
 import '../views/main/main_view.dart';
 import '../views/chatboard/chatboard_view.dart';
 import '../views/post/post_view.dart';
+import '../views/tabs/verification_view.dart';
 //import '../views/add_post/add_post_view.dart';
 
 final GoRouter router = GoRouter(
@@ -45,8 +46,23 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/chatboard/:id',
       builder: (BuildContext context, GoRouterState state) {
+        final id = state.pathParameters['id']!;
+        // Validate that the ID is a valid integer
+        if (int.tryParse(id) == null) {
+          // If the ID is invalid, show an error and navigate back
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Invalid chatboard ID'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            context.pop();
+          });
+          return const MainView(); // Return to main view if ID is invalid
+        }
         return ChatboardView(
-          chatboardId: state.pathParameters['id']!,
+          chatboardId: id,
         );
       },
     ),
@@ -64,6 +80,14 @@ final GoRouter router = GoRouter(
         return PostView(
           chatboardId: state.pathParameters['chatboardId']!,
           postId: state.pathParameters['postId']!,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/chatboard/:chatboardId/verification',
+      builder: (BuildContext context, GoRouterState state) {
+        return VerificationView(
+          chatboardId: state.pathParameters['chatboardId']!,
         );
       },
     ),

@@ -8,6 +8,7 @@ import '../../../providers/post_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../views/comment/comment_view.dart';
 import '../../../providers/authentication_provider.dart';
+import '../../../views/tabs/teacher_tab.dart';
 
 class ChatboardView extends ConsumerStatefulWidget {
   final String chatboardId;
@@ -32,13 +33,39 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
 
   Future<void> _fetchChatboardTitle() async {
     try {
+      print('Fetching chatboard with ID: ${widget.chatboardId}');
+      // Convert the string ID to an integer
+      final chatboardId = int.tryParse(widget.chatboardId);
+      if (chatboardId == null) {
+        print('Invalid chatboard ID: ${widget.chatboardId}');
+        if (mounted) {
+          setState(() {
+            chatboardTitle = 'Invalid ID';
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid chatboard ID'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              context.pop();
+            }
+          });
+        }
+        return;
+      }
+      
       final chatboard = await ref.read(chatboardProvider(widget.chatboardId).future);
+      
       if (chatboard != null && mounted) {
+        print('Chatboard found: ${chatboard.title} (ID: ${chatboard.id})');
         setState(() {
           chatboardTitle = chatboard.title;
         });
       } else if (mounted) {
-        // User doesn't have access to this chatboard or chatboard not found
+        print('Chatboard not found or access denied');
         setState(() {
           chatboardTitle = 'Access Denied';
         });
@@ -125,7 +152,7 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
                   ? TabBarView(
                       children: [
                         _PostsTab(chatboardId: widget.chatboardId),
-                        _TeacherTab(chatboardId: widget.chatboardId),
+                        TeacherTab(chatboardId: widget.chatboardId),
                       ],
                     )
                   : _PostsTab(chatboardId: widget.chatboardId),
@@ -278,110 +305,6 @@ class _PostsTab extends ConsumerWidget {
       ),
       loading: () => const Center(
         child: CircularProgressIndicator(),
-      ),
-    );
-  }
-}
-
-class _TeacherTab extends ConsumerWidget {
-  final String chatboardId;
-
-  const _TeacherTab({required this.chatboardId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Teacher Panel',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.verified_user),
-              title: const Text('Verification'),
-              subtitle: const Text('Verify student submissions'),
-              onTap: () {
-                // Add verification functionality
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: const Text('Attendance'),
-              subtitle: const Text('Manage student attendance'),
-              onTap: () {
-                // Add attendance management functionality
-              },
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.quiz),
-              title: const Text('Questionnaires'),
-              subtitle: const Text('Create and manage questionnaires'),
-              onTap: () {
-                // Add questionnaire functionality
-              },
-            ),
-          ),
-          // Statistics section
-          const SizedBox(height: 24),
-          Text(
-            'Class Statistics',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.how_to_reg),
-                        const SizedBox(height: 8),
-                        const Text('Attendance Rate'),
-                        Text(
-                          '95%',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.assignment_turned_in),
-                        const SizedBox(height: 8),
-                        const Text('Completion Rate'),
-                        Text(
-                          '87%',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

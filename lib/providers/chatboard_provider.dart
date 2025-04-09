@@ -29,10 +29,7 @@ final chatboardProvider = FutureProvider.family<Chatboard?, String>((ref, chatbo
   final userAsync = ref.watch(userProvider);
   
   return userAsync.when(
-    data: (user) => chatboardService.getChatboard(
-      chatboardId,
-      user: user,
-    ),
+    data: (user) => chatboardService.getChatboard(chatboardId, user: user),
     loading: () => null,
     error: (_, __) => null,
   );

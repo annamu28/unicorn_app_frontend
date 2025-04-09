@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:unicorn_app_frontend/services/dio_provider.dart';
 import '../models/post_model.dart';
 import '../services/post_service.dart';
-import '../services/dio_provider.dart';
 
 final postServiceProvider = Provider((ref) {
   final dio = ref.watch(authenticatedDioProvider);
