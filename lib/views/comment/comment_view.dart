@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/comment_provider.dart';
+import '../../providers/post_provider.dart' as post;
 import 'package:intl/intl.dart';
 
 class CommentView extends ConsumerStatefulWidget {
   final String postId;
+  final String chatboardId;
 
   const CommentView({
     super.key,
     required this.postId,
+    required this.chatboardId,
   });
 
   @override
@@ -42,12 +45,23 @@ class _CommentViewState extends ConsumerState<CommentView> {
         _commentController.clear();
         // Refresh comments list
         ref.refresh(commentsProvider(widget.postId));
+        // Refresh posts to update comment count
+        ref.read(post.refreshPostsProvider)(widget.chatboardId);
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Failed to create comment';
+        
+        // Extract a more user-friendly error message
+        if (e.toString().contains('permission')) {
+          errorMessage = 'You do not have permission to comment on this post';
+        } else if (e.toString().contains('network')) {
+          errorMessage = 'Network error. Please check your connection and try again';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to create comment: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );

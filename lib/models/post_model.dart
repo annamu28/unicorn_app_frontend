@@ -1,30 +1,26 @@
 class PostAuthor {
-  final String firstName;
-  final String lastName;
-  final String? email;
+  final String username;
+  final List<String> roles;
 
   PostAuthor({
-    required this.firstName,
-    required this.lastName,
-    this.email,
+    required this.username,
+    required this.roles,
   });
 
   factory PostAuthor.fromJson(dynamic json) {
     if (json is String) {
       // Handle case where author is just a string
       return PostAuthor(
-        firstName: json.split(' ').first,
-        lastName: json.split(' ').skip(1).join(' '),
-        email: null,
+        username: json,
+        roles: [],
       );
     }
     
     // Handle case where author is an object
     final authorMap = json as Map<String, dynamic>;
     return PostAuthor(
-      firstName: authorMap['first_name'] as String,
-      lastName: authorMap['last_name'] as String,
-      email: authorMap['email'] as String?,
+      username: authorMap['username'] as String? ?? '',
+      roles: List<String>.from(authorMap['roles']?.map((x) => x?.toString() ?? '') ?? []),
     );
   }
 }
@@ -64,7 +60,7 @@ class Post {
       pinned: json['pinned'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
       author: PostAuthor.fromJson(json['author']),
-      commentCount: json['comment_count'] as int?,
+      commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
       userRole: json['user_role'] as String?,
     );
   }

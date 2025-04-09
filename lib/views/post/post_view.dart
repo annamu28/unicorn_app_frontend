@@ -57,29 +57,32 @@ class PostView extends ConsumerWidget {
                               child: Row(
                                 children: [
                                   Text(
-                                    '${post.author.firstName} ${post.author.lastName}',
+                                    post.author.username,
                                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  if (post.userRole != null) ...[
+                                  if (post.author.roles.isNotEmpty) ...[
                                     const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        post.userRole!,
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Colors.blue,
+                                    ...post.author.roles.map((role) => Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          role,
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Colors.blue,
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                    )).toList(),
                                   ],
                                 ],
                               ),
@@ -114,7 +117,10 @@ class PostView extends ConsumerWidget {
 
               // Expanded comment view
               Expanded(
-                child: CommentView(postId: postId),
+                child: CommentView(
+                  postId: postId,
+                  chatboardId: chatboardId,
+                ),
               ),
             ],
           );

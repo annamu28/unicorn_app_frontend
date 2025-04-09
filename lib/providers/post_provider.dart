@@ -11,4 +11,11 @@ final postServiceProvider = Provider((ref) {
 final postsProvider = FutureProvider.family<List<Post>, String>((ref, chatboardId) async {
   final postService = ref.watch(postServiceProvider);
   return postService.getPosts(chatboardId);
+});
+
+// Provider to refresh posts after comment changes
+final refreshPostsProvider = Provider<void Function(String)>((ref) {
+  return (String chatboardId) {
+    ref.invalidate(postsProvider(chatboardId));
+  };
 }); 

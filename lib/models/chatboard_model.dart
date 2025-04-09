@@ -11,9 +11,9 @@ class ChatboardAccess {
 
   factory ChatboardAccess.fromJson(Map<String, dynamic> json) {
     return ChatboardAccess(
-      squads: List<String>.from(json['squads'] as List),
-      roles: List<String>.from(json['roles'] as List),
-      countries: List<String>.from(json['countries'] as List),
+      squads: List<String>.from(json['squads']?.map((x) => x?.toString() ?? '') ?? []),
+      roles: List<String>.from(json['roles']?.map((x) => x?.toString() ?? '') ?? []),
+      countries: List<String>.from(json['countries']?.map((x) => x?.toString() ?? '') ?? []),
     );
   }
 }
