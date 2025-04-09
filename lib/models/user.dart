@@ -34,12 +34,14 @@ class Squad {
 }
 
 class User {
+  final int id;
   final String username;
   final List<String> roles;
   final List<Squad> squads;
   final List<String> countries;
 
   User({
+    required this.id,
     required this.username,
     required this.roles,
     required this.squads,
@@ -47,7 +49,14 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    // Get the user_id from the authentication state if available
+    final userId = json['user_id'] as int? ?? json['id'] as int?;
+    if (userId == null) {
+      throw Exception('User ID is required but not found in the response');
+    }
+
     return User(
+      id: userId,
       username: json['username'] as String,
       roles: List<String>.from(json['roles'] as List),
       squads: (json['squads'] as List).map((squad) => Squad.fromJson(squad as Map<String, dynamic>)).toList(),

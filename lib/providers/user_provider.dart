@@ -5,7 +5,7 @@ import '../services/dio_provider.dart';
 
 final userServiceProvider = Provider<UserService>((ref) {
   final dio = ref.watch(authenticatedDioProvider);
-  return UserService(dio);
+  return UserService(dio, ref);
 });
 
 final userProvider = FutureProvider<User>((ref) async {

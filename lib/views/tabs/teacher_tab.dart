@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/pending_user_model.dart';
 import '../../providers/pending_users_provider.dart';
 import '../../providers/user_provider.dart';
+import '../attendance/attendance_panel_view.dart';
 import 'verification_view.dart';
 
 class TeacherTab extends ConsumerWidget {
@@ -57,7 +58,13 @@ class TeacherTab extends ConsumerWidget {
                   title: const Text('Attendance'),
                   subtitle: const Text('Manage student attendance'),
                   onTap: () {
-                    // Add attendance management functionality
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => AttendancePanelView(
+                          chatboardId: chatboardId,
+                        ),
+                      ),
+                    );
                   },
                 ),
               ),
