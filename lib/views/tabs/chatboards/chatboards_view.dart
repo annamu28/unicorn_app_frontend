@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/chatboard_provider.dart';
 import '../../../models/chatboard_model.dart';
+import '../../../providers/user_provider.dart';
 
 class ChatboardsView extends ConsumerWidget {
   const ChatboardsView({super.key});
@@ -10,39 +11,52 @@ class ChatboardsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatboardsAsync = ref.watch(chatboardsProvider(null));
+    final userAsync = ref.watch(userProvider);
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(chatboardsProvider(null).future),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: chatboardsAsync.when(
-          data: (chatboards) => GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
-              childAspectRatio: 1.0,
-            ),
-            itemCount: chatboards.length + 1,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _buildAddChatboardBubble(context);
-              }
-              final chatboard = chatboards[index - 1];
-              return _buildChatboardBubble(context, chatboard);
-            },
-          ),
-          error: (error, stackTrace) => SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height - 100,
-              child: Center(
-                child: Text('Error: $error'),
+        child: userAsync.when(
+          data: (user) {
+            final isAdmin = user.hasRole('Admin');
+            
+            return chatboardsAsync.when(
+              data: (chatboards) => GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16.0,
+                  mainAxisSpacing: 16.0,
+                  childAspectRatio: 1.0,
+                ),
+                itemCount: isAdmin ? chatboards.length + 1 : chatboards.length,
+                itemBuilder: (context, index) {
+                  if (isAdmin && index == 0) {
+                    return _buildAddChatboardBubble(context);
+                  }
+                  final chatboard = chatboards[isAdmin ? index - 1 : index];
+                  return _buildChatboardBubble(context, chatboard);
+                },
               ),
-            ),
-          ),
+              error: (error, stackTrace) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height - 100,
+                  child: Center(
+                    child: Text('Error: $error'),
+                  ),
+                ),
+              ),
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          },
           loading: () => const Center(
             child: CircularProgressIndicator(),
+          ),
+          error: (error, stackTrace) => Center(
+            child: Text('Error loading user info: $error'),
           ),
         ),
       ),

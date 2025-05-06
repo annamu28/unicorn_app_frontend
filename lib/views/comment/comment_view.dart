@@ -52,10 +52,8 @@ class _CommentViewState extends ConsumerState<CommentView> {
       if (mounted) {
         String errorMessage = 'Failed to create comment';
         
-        // Extract a more user-friendly error message
-        if (e.toString().contains('permission')) {
-          errorMessage = 'You do not have permission to comment on this post';
-        } else if (e.toString().contains('network')) {
+        // Simplified error handling
+        if (e.toString().contains('network')) {
           errorMessage = 'Network error. Please check your connection and try again';
         }
         
@@ -102,37 +100,55 @@ class _CommentViewState extends ConsumerState<CommentView> {
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 4),
+                        // Exact same implementation as in chatboard_view
                         Row(
                           children: [
-                            Text(
-                              comment.author,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Roles above username
+                                  if (comment.userRole != null)
+                                    Wrap(
+                                      spacing: 4.0,
+                                      runSpacing: 4.0,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            comment.userRole!,
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.blue,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  const SizedBox(height: 2),
+                                  // Username below roles
+                                  Text(
+                                    comment.author,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
                             ),
-                            if (comment.userRole != null) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  comment.userRole!,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                              ),
-                            ],
-                            const Spacer(),
+                            // Date on the right
                             Text(
                               DateFormat('MMM d, y').format(comment.createdAt),
                               style: Theme.of(context).textTheme.bodySmall,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),

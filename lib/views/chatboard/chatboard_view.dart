@@ -238,19 +238,15 @@ class _PostsTab extends ConsumerWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  post.author.username,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                if (post.author.roles.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
-                                  ...post.author.roles.map((role) => Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: Container(
+                                // Roles above username
+                                if (post.author.roles.isNotEmpty)
+                                  Wrap(
+                                    spacing: 4.0,
+                                    runSpacing: 4.0,
+                                    children: post.author.roles.map((role) => Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 8,
                                         vertical: 2,
@@ -265,9 +261,16 @@ class _PostsTab extends ConsumerWidget {
                                           color: Colors.blue,
                                         ),
                                       ),
-                                    ),
-                                  )).toList(),
-                                ],
+                                    )).toList(),
+                                  ),
+                                const SizedBox(height: 2),
+                                // Username below roles
+                                Text(
+                                  post.author.username,
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                           ),

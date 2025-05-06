@@ -42,24 +42,7 @@ class CommentService {
     required String content,
   }) async {
     try {
-      // First check if we have access to the post
-      try {
-        final postResponse = await _dio.get('/posts/$postId');
-        print('Post access check response: ${postResponse.data}');
-        
-        // Check if the post exists and is accessible
-        if (postResponse.data == null) {
-          throw Exception('Post not found');
-        }
-      } catch (e) {
-        print('Error checking post access: $e');
-        if (e is DioException && e.response?.statusCode == 403) {
-          throw Exception('You do not have permission to comment on this post');
-        }
-        rethrow;
-      }
-      
-      // Create the comment
+      // Create the comment directly without permission checks
       final response = await _dio.post(
         '/comments',
         data: {
@@ -98,11 +81,6 @@ class CommentService {
       if (e is DioException) {
         print('Response data: ${e.response?.data}');
         print('Request data: ${e.requestOptions.data}');
-        
-        // Handle specific error cases
-        if (e.response?.statusCode == 500 && e.response?.data['error'] == 'Failed to verify access') {
-          throw Exception('You do not have permission to comment on this post');
-        }
       }
       rethrow;
     }

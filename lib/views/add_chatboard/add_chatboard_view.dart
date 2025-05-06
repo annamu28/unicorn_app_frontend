@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../services/chatboard_service.dart';
 import '../../../providers/chatboard_provider.dart';
+import '../../../providers/avatar_providers.dart';
+import '../../../models/avatar_models.dart';
 
 class CreateNewChatboardView extends ConsumerStatefulWidget {
   const CreateNewChatboardView({super.key});
@@ -19,6 +21,38 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
   List<int> _selectedRoleIds = [];
   List<int> _selectedCountryIds = [];
   List<int> _selectedSquadIds = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
+    try {
+      // Wait for the auth state to be ready
+      await Future.delayed(Duration(milliseconds: 100));
+      
+      await Future.wait([
+        ref.read(countriesProvider.future),
+        ref.read(squadsProvider.future),
+        ref.read(rolesProvider.future),
+      ]);
+    } catch (e) {
+      print('Error loading initial data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading data: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -29,95 +63,135 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
 
   @override
   Widget build(BuildContext context) {
+    final countriesAsync = ref.watch(countriesProvider);
+    final squadsAsync = ref.watch(squadsProvider);
+    final rolesAsync = ref.watch(rolesProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create New Chatboard'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(40.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Chatboard Title',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Title is required' : null,
-                ),
-                const SizedBox(height: 20),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Chatboard Title',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                          value?.isEmpty ?? true ? 'Title is required' : null,
+                    ),
+                    const SizedBox(height: 20),
 
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Chatboard Description',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Description is required' : null,
-                ),
-                const SizedBox(height: 30),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Chatboard Description',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                          value?.isEmpty ?? true ? 'Description is required' : null,
+                    ),
+                    const SizedBox(height: 30),
 
-                const Text(
-                  'Who can access this chatboard?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Use your actual roles, countries, and squads data here
-                // This is just an example - you should get these from your API
-                _buildMultiSelect(
-                  title: 'Roles',
-                  items: [{'id': 1, 'name': 'Admin'}],
-                  selectedIds: _selectedRoleIds,
-                  onChanged: (ids) => setState(() => _selectedRoleIds = ids),
-                ),
-                const SizedBox(height: 20),
-
-                _buildMultiSelect(
-                  title: 'Countries',
-                  items: [{'id': 1, 'name': 'Estonia'}],
-                  selectedIds: _selectedCountryIds,
-                  onChanged: (ids) => setState(() => _selectedCountryIds = ids),
-                ),
-                const SizedBox(height: 20),
-
-                _buildMultiSelect(
-                  title: 'Squads',
-                  items: [{'id': 1, 'name': 'HK Unicorn Squad'}],
-                  selectedIds: _selectedSquadIds,
-                  onChanged: (ids) => setState(() => _selectedSquadIds = ids),
-                ),
-                const SizedBox(height: 40),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                    const Text(
+                      'Who can access this chatboard?',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onPressed: _createChatboard,
-                    child: const Text('Create Chatboard'),
-                  ),
+                    const SizedBox(height: 16),
+
+                    // Roles selection
+                    countriesAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => Center(child: Text('Error: $error')),
+                      data: (countries) {
+                        return squadsAsync.when(
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (error, stack) => Center(child: Text('Error: $error')),
+                          data: (squads) {
+                            return rolesAsync.when(
+                              loading: () => const Center(child: CircularProgressIndicator()),
+                              error: (error, stack) => Center(child: Text('Error: $error')),
+                              data: (roles) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Roles selection
+                                    _buildMultiSelect(
+                                      title: 'Roles',
+                                      items: roles.map((role) => {
+                                        'id': role.id,
+                                        'name': role.name,
+                                      }).toList(),
+                                      selectedIds: _selectedRoleIds,
+                                      onChanged: (ids) => setState(() => _selectedRoleIds = ids),
+                                    ),
+                                    const SizedBox(height: 20),
+
+                                    // Countries selection
+                                    _buildMultiSelect(
+                                      title: 'Countries',
+                                      items: countries.map((country) => {
+                                        'id': country.id,
+                                        'name': country.name,
+                                      }).toList(),
+                                      selectedIds: _selectedCountryIds,
+                                      onChanged: (ids) => setState(() => _selectedCountryIds = ids),
+                                    ),
+                                    const SizedBox(height: 20),
+
+                                    // Squads selection
+                                    _buildMultiSelect(
+                                      title: 'Squads',
+                                      items: squads.map((squad) => {
+                                        'id': squad.id,
+                                        'name': squad.name,
+                                      }).toList(),
+                                      selectedIds: _selectedSquadIds,
+                                      onChanged: (ids) => setState(() => _selectedSquadIds = ids),
+                                    ),
+                                    const SizedBox(height: 40),
+
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.black,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        onPressed: _createChatboard,
+                                        child: const Text('Create Chatboard'),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
@@ -175,6 +249,7 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
       return;
     }
 
+    setState(() => _isLoading = true);
     try {
       final chatboardService = ref.read(chatboardServiceProvider);
       final success = await chatboardService.createChatboard(
@@ -198,6 +273,10 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error creating chatboard: $e')),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
