@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/pending_user_model.dart';
-import '../../providers/pending_users_provider.dart';
-import '../../providers/user_provider.dart';
+import '../../../models/pending_user_model.dart';
+import '../../../providers/pending_users_provider.dart';
+import '../../../providers/user_provider.dart';
 
 class VerificationView extends ConsumerWidget {
   final String chatboardId;
@@ -52,6 +52,7 @@ class VerificationView extends ConsumerWidget {
                         children: [
                           Text('Email: ${pendingUser.email}'),
                           Text('Squad: ${pendingUser.squadName}'),
+                          Text('Role: ${pendingUser.role}'),
                           Text('Status: ${pendingUser.status}'),
                         ],
                       ),

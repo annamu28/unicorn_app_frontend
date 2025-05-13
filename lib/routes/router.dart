@@ -8,7 +8,7 @@ import 'package:unicorn_app_frontend/views/avatar/avatar_view.dart';
 import '../views/main/main_view.dart';
 import '../views/chatboard/chatboard_view.dart';
 import '../views/post/post_view.dart';
-import '../views/tabs/verification_view.dart';
+import '../views/panels/verification/verification_view.dart';
 //import '../views/add_post/add_post_view.dart';
 
 final GoRouter router = GoRouter(

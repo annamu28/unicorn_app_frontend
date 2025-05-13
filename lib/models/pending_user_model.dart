@@ -6,6 +6,7 @@ class PendingUser {
   final int squadId;
   final String squadName;
   final String status;
+  final String role;
 
   PendingUser({
     required this.userId,
@@ -15,6 +16,7 @@ class PendingUser {
     required this.squadId,
     required this.squadName,
     required this.status,
+    required this.role,
   });
 
   factory PendingUser.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class PendingUser {
       squadId: json['squad_id'] as int,
       squadName: json['squad_name'] as String,
       status: json['status'] as String,
+      role: json['role'] as String? ?? 'Unknown',
     );
   }
 }

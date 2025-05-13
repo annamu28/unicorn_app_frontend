@@ -8,8 +8,9 @@ import 'package:dio/dio.dart';
 class ApiService {
   static final Dio _dio = Dio()
     ..options.baseUrl = ApiConfig.baseUrl
-    ..options.connectTimeout = ApiConfig.timeout
-    ..options.receiveTimeout = ApiConfig.timeout;
+    ..options.connectTimeout = ApiConfig.connectionTimeout
+    ..options.receiveTimeout = ApiConfig.receiveTimeout
+    ..options.sendTimeout = ApiConfig.sendTimeout;
 
   static final http.Client _client = http.Client();
   
@@ -53,75 +54,6 @@ class ApiService {
     } catch (e) {
       print('Connection test failed: $e');
       return false;
-    }
-  }
-
-  static Future<Map<String, dynamic>> login(String email, String password) async {
-    try {
-      print('Login with endpoint: ${_dio.options.baseUrl}/login');
-      final response = await _dio.post('/login', data: {
-        'email': email,
-        'password': password,
-      });
-      
-      print('Login response: ${response.data}');
-      return response.data;
-    } on DioException catch (e) {
-      print('Login endpoint: ${_dio.options.baseUrl}/login');
-      print('Request data: email=$email');
-      throw DioException(
-        requestOptions: e.requestOptions,
-        response: e.response,
-        error: 'Login failed: ${e.message}',
-      );
-    }
-  }
-
-  static Future<Map<String, dynamic>> register({
-    required String firstName,
-    required String lastName,
-    required String email,
-    required String password,
-    required DateTime birthday,
-  }) async {
-    try {
-      print('Registering with endpoint: ${_dio.options.baseUrl}/register');
-      final response = await _dio.post(
-        '/register',
-        data: {
-          'first_name': firstName,
-          'last_name': lastName,
-          'email': email,
-          'password': password,
-          'birthday': birthday.toIso8601String().split('T')[0],
-        },
-      );
-      print('Register response: ${response.data}');
-      return response.data as Map<String, dynamic>;
-    } catch (e) {
-      print('API Service Register Error: $e');
-      rethrow;
-    }
-  }
-
-  static Future<void> logout(String accessToken, String refreshToken) async {
-    try {
-      print('Logout with endpoint: ${_dio.options.baseUrl}/logout');
-      final response = await _dio.post(
-        '/logout',
-        data: {
-          'refresh_token': refreshToken,
-        },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken',
-          },
-        ),
-      );
-      print('Logout response: ${response.data}');
-    } catch (e) {
-      print('API Service Logout Error: $e');
-      rethrow;
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:unicorn_app_frontend/state/auth_state.dart';
 import 'package:unicorn_app_frontend/views/authentication/validators/validator.dart';
 import 'package:unicorn_app_frontend/views/constants/colors.dart';
 import 'package:unicorn_app_frontend/views/constants/strings.dart';
+import 'package:unicorn_app_frontend/views/authentication/register/terms_and_agreement.dart';
 
 
 class RegisterView extends ConsumerStatefulWidget {
@@ -23,6 +24,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   DateTime? _selectedDate;
+  bool _acceptedTerms = false;
 
   @override
   void dispose() {
@@ -48,6 +50,16 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   }
 
   Future<void> _attemptRegister() async {
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please accept the terms and conditions to register'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate() && _selectedDate != null) {
       final firstName = _firstNameController.text;
       final lastName = _lastNameController.text;
@@ -76,8 +88,10 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   @override
   Widget build(BuildContext context) {
     final authProvider = ref.watch(authenticationProvider);
-    ref.listen(isLoggedInProvider, (_, isLoggedIn) {
-      context.pop();
+    ref.listen(authenticationProvider, (_, state) {
+      if (state.isAuthenticated) {
+        context.pop();
+      }
     });
 
     ref.listen(authenticationProvider, (AuthState? previous, AuthState current) {
@@ -104,8 +118,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(40),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -211,17 +225,39 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                 ),
               ),
               const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _acceptedTerms,
+                    onChanged: (value) {
+                      setState(() {
+                        _acceptedTerms = value ?? false;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        showTermsAndAgreement(context);
+                      },
+                      child: Text(
+                        'I agree to the terms and conditions',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               TextButton(
                 style: TextButton.styleFrom(
                   backgroundColor: AppColors.loginButtonColor,
                   foregroundColor: AppColors.loginButtonTextColor,
                 ),
-                onPressed: authProvider.isLoading
-                    ? null
-                    : () {
-                        FocusScope.of(context).unfocus();
-                        _attemptRegister();
-                      },
+                onPressed: _attemptRegister,
                 child: authProvider.isLoading
                     ? CircularProgressIndicator()
                     : Text(Strings.register),

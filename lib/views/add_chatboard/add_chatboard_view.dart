@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../services/chatboard_service.dart';
 import '../../../providers/chatboard_provider.dart';
 import '../../../providers/avatar_providers.dart';
 import '../../../models/avatar_models.dart';
+import 'widgets/multi_select_widget.dart';
+import 'widgets/chatboard_creator.dart';
 
 class CreateNewChatboardView extends ConsumerStatefulWidget {
   const CreateNewChatboardView({super.key});
@@ -129,7 +130,7 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // Roles selection
-                                    _buildMultiSelect(
+                                    MultiSelect(
                                       title: 'Roles',
                                       items: roles.map((role) => {
                                         'id': role.id,
@@ -141,7 +142,7 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
                                     const SizedBox(height: 20),
 
                                     // Countries selection
-                                    _buildMultiSelect(
+                                    MultiSelect(
                                       title: 'Countries',
                                       items: countries.map((country) => {
                                         'id': country.id,
@@ -153,7 +154,7 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
                                     const SizedBox(height: 20),
 
                                     // Squads selection
-                                    _buildMultiSelect(
+                                    MultiSelect(
                                       title: 'Squads',
                                       items: squads.map((squad) => {
                                         'id': squad.id,
@@ -175,7 +176,19 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                         ),
-                                        onPressed: _createChatboard,
+                                        onPressed: () {
+                                          final creator = ChatboardCreator(
+                                            ref: ref,
+                                            context: context,
+                                            titleController: _titleController,
+                                            descriptionController: _descriptionController,
+                                            selectedRoleIds: _selectedRoleIds,
+                                            selectedCountryIds: _selectedCountryIds,
+                                            selectedSquadIds: _selectedSquadIds,
+                                            setLoading: (loading) => setState(() => _isLoading = loading),
+                                          );
+                                          creator.createChatboard();
+                                        },
                                         child: const Text('Create Chatboard'),
                                       ),
                                     ),
@@ -193,91 +206,5 @@ class CreateNewChatboardViewState extends ConsumerState<CreateNewChatboardView> 
             ),
           ),
     );
-  }
-
-  Widget _buildMultiSelect({
-    required String title,
-    required List<Map<String, dynamic>> items,
-    required List<int> selectedIds,
-    required Function(List<int>) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: items.map((item) {
-            return FilterChip(
-              label: Text(item['name'] as String),
-              selected: selectedIds.contains(item['id']),
-              onSelected: (selected) {
-                final newIds = List<int>.from(selectedIds);
-                if (selected) {
-                  newIds.add(item['id'] as int);
-                } else {
-                  newIds.remove(item['id']);
-                }
-                onChanged(newIds);
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _createChatboard() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_selectedRoleIds.isEmpty &&
-        _selectedCountryIds.isEmpty &&
-        _selectedSquadIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Select at least one role, country, or squad'),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      final chatboardService = ref.read(chatboardServiceProvider);
-      final success = await chatboardService.createChatboard(
-        title: _titleController.text,
-        description: _descriptionController.text,
-        roleIds: _selectedRoleIds,
-        countryIds: _selectedCountryIds,
-        squadIds: _selectedSquadIds,
-      );
-
-      if (success && mounted) {
-        // Refresh the chatboards list
-        ref.refresh(chatboardsProvider(null));
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chatboard created successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating chatboard: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 }

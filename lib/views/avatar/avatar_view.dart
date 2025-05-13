@@ -7,6 +7,12 @@ import 'package:unicorn_app_frontend/services/dio_provider.dart';
 import '../../models/avatar_models.dart';
 import '../../services/avatar_service.dart';
 import 'package:go_router/go_router.dart';
+import 'widgets/avatar_form_submitter.dart';
+import 'widgets/squad_role_selector.dart';
+import 'widgets/name_display.dart';
+import 'widgets/country_selector.dart';
+import 'widgets/submit_button.dart';
+import 'widgets/name_manager.dart';
 
 final avatarServiceProvider = Provider((ref) => AvatarService(ref.watch(authenticatedDioProvider)));
 
@@ -22,42 +28,12 @@ class _AvatarViewState extends ConsumerState<AvatarView> {
   Country? _selectedCountry;
   List<SquadRoleSelection> _squadRoles = [SquadRoleSelection(squadId: 0, roleId: 0)];
   bool _isLoading = false;
-  bool _showFullName = true;
-
-  String get _fullName {
-    final authState = ref.read(authenticationProvider);
-    final userInfo = authState.userInfo;
-    
-    print('UserInfo: $userInfo');
-    
-    final firstName = userInfo?['first_name'] as String?;
-    final lastName = userInfo?['last_name'] as String?;
-
-    if (firstName == null || lastName == null) {
-      print('Name is null - firstName: $firstName, lastName: $lastName');
-      return 'Name not available';
-    }
-    return "$firstName $lastName";
-  }
-
-  String get _shortName {
-    final authState = ref.read(authenticationProvider);
-    final userInfo = authState.userInfo;
-    final firstName = userInfo?['first_name'] as String?;
-    final lastName = userInfo?['last_name'] as String?;
-
-    if (firstName == null || lastName == null) return 'Name not available';
-    
-    final first = firstName.length >= 3 ? firstName.substring(0, 3) : firstName;
-    final last = lastName.length >= 3 ? lastName.substring(0, 3) : lastName;
-    return "$first$last";
-  }
-
-  String get _nameLabel => _showFullName ? 'Full Name' : 'Short Name';
+  late NameManager _nameManager;
 
   @override
   void initState() {
     super.initState();
+    _nameManager = NameManager(ref);
     _loadInitialData();
     _loadUserInfo();
   }
@@ -182,68 +158,28 @@ class _AvatarViewState extends ConsumerState<AvatarView> {
                                         children: [
                                           const SizedBox(height: 20),
                                           
-                                          // Name Label
-                                          Center(
-                                            child: Text(
-                                              _nameLabel,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.grey,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          
-                                          // Display Name
-                                          Center(
-                                            child: Text(
-                                              _showFullName ? _fullName : _shortName,
-                                              style: const TextStyle(
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          
-                                          const SizedBox(height: 20),
-
-                                          // Display name toggle
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Show ${_showFullName ? 'Short' : 'Full'} Name',
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                              Switch(
-                                                value: _showFullName,
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    _showFullName = value;
-                                                  });
-                                                },
-                                                activeColor: Colors.black,
-                                              ),
-                                            ],
+                                          // Name display and toggle
+                                          NameDisplay(
+                                            fullName: _nameManager.fullName,
+                                            shortName: _nameManager.shortName,
+                                            showFullName: _nameManager.showFullName,
+                                            onToggle: (value) {
+                                              setState(() {
+                                                _nameManager.setShowFullName(value);
+                                              });
+                                            },
+                                            onFirstLastInitial: () {
+                                              setState(() {
+                                                _nameManager.setFirstLastInitial();
+                                              });
+                                            },
                                           ),
                                           const SizedBox(height: 20),
 
                                           // Country selection
-                                          DropdownButtonFormField<Country>(
-                                            value: _selectedCountry,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Country',
-                                              border: OutlineInputBorder(),
-                                            ),
-                                            items: countries.map((country) {
-                                              return DropdownMenuItem(
-                                                value: country,
-                                                child: Text(country.name),
-                                              );
-                                            }).toList(),
+                                          CountrySelector(
+                                            countries: countries,
+                                            selectedCountry: _selectedCountry,
                                             onChanged: (value) {
                                               setState(() => _selectedCountry = value);
                                             },
@@ -251,141 +187,29 @@ class _AvatarViewState extends ConsumerState<AvatarView> {
                                           const SizedBox(height: 20),
 
                                           // Squad selection
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                'Squad Roles',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 8),
-                                              ..._squadRoles.asMap().entries.map((entry) {
-                                                final index = entry.key;
-                                                final squadRole = entry.value;
-                                                
-                                                return Card(
-                                                  margin: const EdgeInsets.only(bottom: 16),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.all(16),
-                                                    child: Column(
-                                                      children: [
-                                                        Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                          children: [
-                                                            Text('Squad Role ${index + 1}'),
-                                                            if (_squadRoles.length > 1)
-                                                              IconButton(
-                                                                icon: const Icon(Icons.remove_circle_outline),
-                                                                onPressed: () => _removeSquadRole(index),
-                                                                color: Colors.red,
-                                                              ),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(height: 8),
-                                                        // Squad selection
-                                                        DropdownButtonFormField<Squad>(
-                                                          value: squads.firstWhere(
-                                                            (s) => s.id == squadRole.squadId,
-                                                            orElse: () => squads.first,
-                                                          ),
-                                                          decoration: const InputDecoration(
-                                                            labelText: 'Unicorn Squad',
-                                                            border: OutlineInputBorder(),
-                                                          ),
-                                                          items: squads.map((squad) {
-                                                            return DropdownMenuItem(
-                                                              value: squad,
-                                                              child: Text(squad.name),
-                                                            );
-                                                          }).toList(),
-                                                          validator: (value) => value?.id == 0 ? 'Please select a squad' : null,
-                                                          onChanged: (squad) {
-                                                            if (squad != null) {
-                                                              _updateSquadRole(index, squad: squad);
-                                                            }
-                                                          },
-                                                        ),
-                                                        const SizedBox(height: 16),
-                                                        // Role selection
-                                                        DropdownButtonFormField<Role>(
-                                                          value: roles.firstWhere(
-                                                            (r) => r.id == squadRole.roleId,
-                                                            orElse: () => roles.first,
-                                                          ),
-                                                          decoration: const InputDecoration(
-                                                            labelText: 'Role',
-                                                            border: OutlineInputBorder(),
-                                                          ),
-                                                          items: roles.map((role) {
-                                                            return DropdownMenuItem(
-                                                              value: role,
-                                                              child: Text(role.name),
-                                                            );
-                                                          }).toList(),
-                                                          validator: (value) => value?.id == 0 ? 'Please select a role' : null,
-                                                          onChanged: (role) {
-                                                            if (role != null) {
-                                                              _updateSquadRole(index, role: role);
-                                                            }
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                              
-                                              // Add Squad Role button
-                                              Center(
-                                                child: TextButton.icon(
-                                                  onPressed: _addSquadRole,
-                                                  icon: const Icon(Icons.add_circle_outline),
-                                                  label: const Text('Add Another Squad Role'),
-                                                  style: TextButton.styleFrom(
-                                                    foregroundColor: Colors.black,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
+                                          SquadRoleSelector(
+                                            squadRoles: _squadRoles,
+                                            squads: squads,
+                                            roles: roles,
+                                            onRemove: _removeSquadRole,
+                                            onUpdate: _updateSquadRole,
+                                            onAdd: _addSquadRole,
+                                          ),
+                                          const SizedBox(height: 20),
+
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
+                                            child: SubmitButton(
+                                              isLoading: _isLoading,
+                                              onPressed: () async {
+                                                if (_formKey.currentState!.validate()) {
+                                                  await _submitForm();
+                                                }
+                                              },
+                                            ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-                                    child: ElevatedButton(
-                                      onPressed: _isLoading ? null : () async {
-                                        if (_formKey.currentState!.validate()) {
-                                          await _submitForm();
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.black,
-                                        foregroundColor: Colors.white,
-                                        minimumSize: const Size.fromHeight(50),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(50),
-                                        ),
-                                        elevation: 0,
-                                        textStyle: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      child: _isLoading
-                                          ? const SizedBox(
-                                              height: 20,
-                                              width: 20,
-                                              child: CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Text('Complete Setup'),
                                     ),
                                   ),
                                 ],
@@ -410,55 +234,18 @@ class _AvatarViewState extends ConsumerState<AvatarView> {
       print('Form validation failed');
       return;
     }
-    
-    if (_selectedCountry == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a country')),
-      );
-      return;
-    }
 
-    if (!_validateSquadRoles()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select both squad and role for each entry')),
-      );
-      return;
-    }
+    final submitter = AvatarFormSubmitter(
+      ref: ref,
+      context: context,
+      showFullName: _nameManager.showFullName,
+      fullName: _nameManager.fullName,
+      shortName: _nameManager.shortName,
+      selectedCountry: _selectedCountry,
+      squadRoles: _squadRoles,
+      setLoading: (value) => setState(() => _isLoading = value),
+    );
 
-    setState(() => _isLoading = true);
-    try {
-      final data = {
-        'username': _showFullName ? _fullName : _shortName,
-        'country_id': _selectedCountry!.id,
-        'squad_roles': _squadRoles,
-      };
-      print('Submitting form with data: $data');
-
-      await ref.read(avatarServiceProvider).createAvatar(
-        username: _showFullName ? _fullName : _shortName,
-        squadRoles: _squadRoles,
-        countryId: _selectedCountry!.id,
-      );
-      
-      // Refresh user data after creating avatar
-      print('Refreshing user data after avatar creation');
-      ref.invalidate(userProvider);
-      
-      // Wait for user data to be refreshed
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      if (mounted) {
-        context.go('/main');
-      }
-    } catch (e) {
-      print('Error submitting form: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating avatar: $e')),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    await submitter.submitForm();
   }
 }

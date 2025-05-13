@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/authentication_provider.dart';
 import '../../dialogs/logout_dialog.dart';
-import '../../../services/api_service.dart';
+import '../../../services/dio_provider.dart';
 import '../../constants/strings.dart';
 
 class SettingsView extends ConsumerWidget {
@@ -12,6 +12,7 @@ class SettingsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authenticationProvider);
+    final authService = ref.watch(authServiceProvider);
 
     return Center(
       child: Padding(
@@ -36,7 +37,7 @@ class SettingsView extends ConsumerWidget {
                 final accessToken = authState.token;
                 
                 if (refreshToken != null && accessToken != null) {
-                  await ApiService.logout(accessToken, refreshToken);
+                  await authService.logout(accessToken, refreshToken);
                 }
                 ref.read(authenticationProvider.notifier).logout();
                 if (context.mounted) {

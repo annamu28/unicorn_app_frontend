@@ -2,11 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:unicorn_app_frontend/models/pending_user_model.dart';
 import '../models/chatboard_model.dart';
 import '../models/user.dart';
+import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/api_config.dart';
 
 class ChatboardService {
   final Dio _dio;
+  final String _baseUrl;
 
-  ChatboardService(this._dio);
+  ChatboardService(this._dio, this._baseUrl);
 
   bool hasAccess(User user, Chatboard chatboard) {
     print('Checking access for user ${user.username} to chatboard ${chatboard.title}');
@@ -87,8 +91,8 @@ class ChatboardService {
       
       print('Chatboards response: ${response.data}');
 
-      if (response.data is! List) {
-        throw Exception('Expected List but got ${response.data.runtimeType}');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load chatboards: ${response.statusCode}');
       }
 
       final List<dynamic> chatboardsJson = response.data as List;
@@ -180,15 +184,7 @@ class ChatboardService {
       print('Found chatboard in list: ${chatboard.title} (ID: ${chatboard.id})');
       
       // Now try to fetch the chatboard details from the API
-      final response = await _dio.get(
-        '/chatboards/${chatboard.id}',
-        options: Options(
-          validateStatus: (status) {
-            // Accept all status codes to handle them manually
-            return true;
-          },
-        ),
-      );
+      final response = await _dio.get('/chatboards/$id');
       
       print('Chatboard API response: ${response.data}');
 
@@ -200,18 +196,6 @@ class ChatboardService {
 
       if (response.data == null) {
         print('Received null response from API');
-        // Return the chatboard from the list if API fails
-        return chatboard;
-      }
-
-      if (response.data is String) {
-        print('Received string response instead of JSON: ${response.data}');
-        // Return the chatboard from the list if API fails
-        return chatboard;
-      }
-
-      if (response.data is! Map<String, dynamic>) {
-        print('Unexpected response type: ${response.data.runtimeType}');
         // Return the chatboard from the list if API fails
         return chatboard;
       }
@@ -299,12 +283,6 @@ class ChatboardService {
           'squad_id': squadId,
           'status': status,
         },
-        options: Options(
-          validateStatus: (status) {
-            // Accept all status codes to handle them manually
-            return true;
-          },
-        ),
       );
       
       print('Verification API response: ${response.data}');
@@ -335,6 +313,30 @@ class ChatboardService {
         }
       }
       rethrow;
+    }
+  }
+
+  Future<void> approveUser(String chatboardId, String userId) async {
+    try {
+      final response = await _dio.post('/chatboards/$chatboardId/approve-user/$userId');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to approve user: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error approving user: $e');
+    }
+  }
+
+  Future<void> rejectUser(String chatboardId, String userId) async {
+    try {
+      final response = await _dio.post('/chatboards/$chatboardId/reject-user/$userId');
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to reject user: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error rejecting user: $e');
     }
   }
 } 

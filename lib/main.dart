@@ -9,18 +9,12 @@ void testApiConnection() async {
   try {
     print('Testing connection to: ${ApiConfig.baseUrl}');
     
-    // Test basic connectivity
+    // Test basic connectivity using health endpoint
     final isConnected = await ApiService.testConnection();
     print('Health check result: $isConnected');
     
-    if (isConnected) {
-      // Test authentication
-      try {
-        final loginResponse = await ApiService.login('test@email.com', 'password');
-        print('Login test response: $loginResponse');
-      } catch (e) {
-        print('Login test failed: $e');
-      }
+    if (!isConnected) {
+      print('Warning: Could not connect to the API server');
     }
   } catch (e) {
     print('Connection test failed: $e');

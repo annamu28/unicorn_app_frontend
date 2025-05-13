@@ -1,12 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:unicorn_app_frontend/services/dio_provider.dart';
 import '../models/pending_user_model.dart';
-import '../services/chatboard_service.dart';
-
-final chatboardServiceProvider = Provider((ref) {
-  final dio = ref.watch(authenticatedDioProvider);
-  return ChatboardService(dio);
-});
+import 'chatboard_provider.dart';
 
 final pendingUsersProvider = FutureProvider.family<PendingUsersResponse, String>((ref, chatboardId) async {
   final chatboardService = ref.watch(chatboardServiceProvider);

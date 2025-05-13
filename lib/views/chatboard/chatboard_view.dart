@@ -8,7 +8,8 @@ import '../../../providers/post_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../views/comment/comment_view.dart';
 import '../../../providers/authentication_provider.dart';
-import '../../../views/tabs/teacher_tab.dart';
+import '../tabs/teacher_tab/teacher_tab.dart';
+import 'widgets/posts_tab.dart';
 
 class ChatboardView extends ConsumerStatefulWidget {
   final String chatboardId;
@@ -130,6 +131,9 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
 
         return postsAsync.when(
           data: (posts) {
+            // Sort posts by creation date (earliest first)
+            final sortedPosts = List.from(posts)..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
             return DefaultTabController(
               length: isSpecialRole ? 2 : 1,
               child: Scaffold(
@@ -151,11 +155,11 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
                 body: isSpecialRole 
                   ? TabBarView(
                       children: [
-                        _PostsTab(chatboardId: widget.chatboardId),
+                        PostsTab(chatboardId: widget.chatboardId),
                         TeacherTab(chatboardId: widget.chatboardId),
                       ],
                     )
-                  : _PostsTab(chatboardId: widget.chatboardId),
+                  : PostsTab(chatboardId: widget.chatboardId),
                 floatingActionButton: FloatingActionButton(
                   onPressed: () {
                     context.push('/add-post/${widget.chatboardId}');
@@ -186,128 +190,6 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
         body: Center(
           child: Text('Error loading user info: $error'),
         ),
-      ),
-    );
-  }
-}
-
-class _PostsTab extends ConsumerWidget {
-  final String chatboardId;
-
-  const _PostsTab({required this.chatboardId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final postsAsync = ref.watch(postsProvider(chatboardId));
-
-    return postsAsync.when(
-      data: (posts) {
-        if (posts.isEmpty) {
-          return const Center(
-            child: Text('No posts yet. Be the first to post!'),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(8.0),
-          itemCount: posts.length,
-          itemBuilder: (context, index) {
-            final post = posts[index];
-            final formattedDate = DateFormat('MMM d, y').format(post.createdAt);
-
-            return GestureDetector(
-              onTap: () {
-                context.push('/post/${chatboardId}/${post.id}');
-              },
-              child: Card(
-                margin: const EdgeInsets.symmetric(
-                  vertical: 8.0,
-                  horizontal: 16.0,
-                ),
-                child: ListTile(
-                  title: Text(post.title),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.content,
-                        maxLines: 30,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Roles above username
-                                if (post.author.roles.isNotEmpty)
-                                  Wrap(
-                                    spacing: 4.0,
-                                    runSpacing: 4.0,
-                                    children: post.author.roles.map((role) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        role,
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Colors.blue,
-                                        ),
-                                      ),
-                                    )).toList(),
-                                  ),
-                                const SizedBox(height: 2),
-                                // Username below roles
-                                Text(
-                                  post.author.username,
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.comment_outlined,
-                                size: 16,
-                                color: Theme.of(context).textTheme.bodySmall?.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${post.commentCount ?? 0}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                formattedDate,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-      error: (error, _) => Center(
-        child: Text('Error: $error'),
-      ),
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
       ),
     );
   }

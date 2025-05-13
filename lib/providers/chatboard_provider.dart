@@ -4,10 +4,12 @@ import '../models/chatboard_model.dart';
 import '../services/chatboard_service.dart';
 import '../services/dio_provider.dart';
 import 'user_provider.dart';
+import '../config/api_config.dart';
+import 'package:http/http.dart' as http;
 
 final chatboardServiceProvider = Provider<ChatboardService>((ref) {
   final dio = ref.watch(authenticatedDioProvider);
-  return ChatboardService(dio);
+  return ChatboardService(dio, ApiConfig.baseUrl);
 });
 
 final chatboardsProvider = FutureProvider.family<List<Chatboard>, String?>((ref, country) async {

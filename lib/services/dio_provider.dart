@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/api_config.dart';
 import '../providers/authentication_provider.dart';
+import 'auth_service.dart';
 
 // Base Dio provider
 final dioProvider = Provider<Dio>((ref) {
@@ -30,4 +31,9 @@ final authenticatedDioProvider = Provider<Dio>((ref) {
   
   print('Created authenticated Dio with headers: ${dio.options.headers}');
   return dio;
+});
+
+// Auth Service provider
+final authServiceProvider = Provider<AuthService>((ref) {
+  return AuthService();
 }); 

@@ -1,10 +1,44 @@
-class ApiConfig {
-  // Replace with your actual API base URL
-  static const String baseUrl = 'http://192.168.1.218:8080';  // Update this!
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-  //home: 'http://192.168.1.218:8080'
-  //school: 'https://unicorn-app-backend.fly.dev'
-  
-  // You might also want to add other API-related constants
-  static const Duration timeout = Duration(seconds: 30);
+class ApiConfig {
+  static String get baseUrl {
+    final url = dotenv.env['BACKEND_URL'];
+    if (url == null || url.isEmpty) {
+      throw Exception('BACKEND_URL is not configured in .env file');
+    }
+    return url;
+  }
+
+  // API endpoints
+  static const String authEndpoint = '/auth';
+  static const String usersEndpoint = '/users';
+  static const String postsEndpoint = '/posts';
+  static const String commentsEndpoint = '/comments';
+  static const String chatboardsEndpoint = '/chatboards';
+  static const String programsEndpoint = '/programs';
+  static const String tokensEndpoint = '/tokens';
+
+  // API timeouts
+  static const Duration connectionTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration sendTimeout = Duration(seconds: 30);
+
+  // API headers
+  static const Map<String, String> defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  // Helper method to get full URL for an endpoint
+  static String getUrl(String endpoint) {
+    return '$baseUrl$endpoint';
+  }
+
+  // Helper method to get headers with authorization
+  static Map<String, String> getHeadersWithAuth(String token) {
+    return {
+      ...defaultHeaders,
+      'Authorization': 'Bearer $token',
+    };
+  }
 } 

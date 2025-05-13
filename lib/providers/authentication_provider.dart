@@ -1,16 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:unicorn_app_frontend/services/dio_provider.dart';
 import '../services/api_service.dart';
 import '../state/auth_state.dart';
 import '../state/auth_result.dart';
+import '../services/auth_service.dart';
 
 class AuthenticationNotifier extends StateNotifier<AuthState> {
-  AuthenticationNotifier() : super(const AuthState());
+  final AuthService _authService;
+
+  AuthenticationNotifier(this._authService) : super(const AuthState());
 
   Future<void> loginWithEmailAndPassword(String email, String password) async {
     try {
       state = state.copyWith(isLoading: true, result: AuthResult.none);
       
-      final response = await ApiService.login(email, password);
+      final response = await _authService.login(email, password);
       
       // Debug prints
       print('Login response: $response');
@@ -63,7 +67,7 @@ class AuthenticationNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, result: AuthResult.none);
       
-      final Map<String, dynamic> response = await ApiService.register(
+      final Map<String, dynamic> response = await _authService.register(
         firstName: firstName,
         lastName: lastName,
         email: email,
@@ -108,14 +112,24 @@ class AuthenticationNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  void logout() {
-    state = AuthState();
+  Future<void> logout() async {
+    try {
+      if (state.token != null && state.userInfo?['refresh_token'] != null) {
+        await _authService.logout(state.token!, state.userInfo!['refresh_token']);
+      }
+      state = AuthState();
+    } catch (e) {
+      print('Logout error: $e');
+      // Even if the API call fails, we still want to clear the local state
+      state = AuthState();
+    }
   }
 }
 
 final authenticationProvider =
     StateNotifierProvider<AuthenticationNotifier, AuthState>((ref) {
-  return AuthenticationNotifier();
+  final authService = ref.watch(authServiceProvider);
+  return AuthenticationNotifier(authService);
 });
 
 final isLoggedInProvider = Provider<bool>((ref) {

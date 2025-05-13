@@ -26,31 +26,12 @@ class PostService {
       for (var json in postsJson) {
         try {
           final postJson = json as Map<String, dynamic>;
-          final postId = postJson['id'];
-          print('Processing post: $postId');
-          
-          // Get comment count directly from comments endpoint
-          int commentCount = 0;
-          try {
-            final commentsResponse = await _dio.get('/comments?post_id=$postId');
-            if (commentsResponse.data != null && commentsResponse.data is List) {
-              commentCount = (commentsResponse.data as List).length;
-            }
-            print('Comment count for post $postId: $commentCount');
-          } catch (e) {
-            print('Error fetching comment count for post $postId: $e');
-          }
-          
-          // Set the comment count in the post data
-          postJson['comment_count'] = commentCount;
-          
           final post = Post.fromJson(postJson);
-          print('Post after parsing - comment count: ${post.commentCount}');
           posts.add(post);
         } catch (e) {
           print('Error parsing post: $json');
           print('Error: $e');
-          rethrow;
+          continue; // Skip this post instead of rethrowing
         }
       }
       
@@ -61,7 +42,7 @@ class PostService {
         print('Response data: ${e.response?.data}');
         print('Request URL: ${e.requestOptions.uri}');
       }
-      rethrow;
+      return []; // Return empty list instead of rethrowing
     }
   }
 
