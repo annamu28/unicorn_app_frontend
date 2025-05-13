@@ -22,7 +22,7 @@ class TeacherTab extends ConsumerWidget {
     return userAsync.when(
       data: (user) {
         // Check if user has required roles
-        final hasRequiredRole = user.hasAnyRole(['Admin', 'Abisarvik', 'Peasarvik']);
+        final hasRequiredRole = user.hasAnyRole(['Admin', 'Helper Unicorn', 'Head Unicorn']);
         if (!hasRequiredRole) {
           return const Center(
             child: Text('You do not have permission to view this tab.'),

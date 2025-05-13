@@ -24,7 +24,7 @@ class VerificationView extends ConsumerWidget {
       body: userAsync.when(
         data: (user) {
           // Check if user has required roles
-          final hasRequiredRole = user.hasAnyRole(['Admin', 'Abisarvik', 'Peasarvik']);
+          final hasRequiredRole = user.hasAnyRole(['Admin', 'Head Unicorn', 'Helper Unicorn']);
           if (!hasRequiredRole) {
             return const Center(
               child: Text('You do not have permission to view this page.'),

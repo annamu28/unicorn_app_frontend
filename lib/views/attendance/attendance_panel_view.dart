@@ -41,7 +41,7 @@ class _AttendancePanelViewState extends ConsumerState<AttendancePanelView> {
     return userAsync.when(
       data: (currentUser) {
         // Check if user has required roles
-        final hasRequiredRole = currentUser.hasAnyRole(['Admin', 'Abisarvik', 'Ükssarvik']);
+        final hasRequiredRole = currentUser.hasAnyRole(['Admin', 'Helper Unicorn', 'Head Unicorn']);
         if (!hasRequiredRole) {
           return Scaffold(
             appBar: AppBar(

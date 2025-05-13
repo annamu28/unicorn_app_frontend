@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:unicorn_app_frontend/config/api_config.dart';
 import 'package:unicorn_app_frontend/routes/router.dart';
 import 'services/api_service.dart';
@@ -28,6 +29,10 @@ void testApiConnection() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+  
   testApiConnection();
   runApp(
     const ProviderScope(

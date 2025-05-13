@@ -124,7 +124,7 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
     
     return userAsync.when(
       data: (user) {
-        final isSpecialRole = user.hasAnyRole(['Admin', 'Abisarvik', 'Peasarvik']);
+        final isSpecialRole = user.hasAnyRole(['Admin', 'Helper Unicorn', 'Head Unicorn']);
         print('User roles: ${user.roles}');
         print('Is special role: $isSpecialRole');
 
