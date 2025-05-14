@@ -60,7 +60,7 @@ class Post {
       pinned: json['pinned'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
       author: PostAuthor.fromJson(json['author']),
-      commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
+      commentCount: json['comment_count'] != null ? (json['comment_count'] as num).toInt() : 0,
       userRole: json['user_role'] as String?,
     );
   }

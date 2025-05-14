@@ -9,7 +9,7 @@ class PostService {
   Future<List<Post>> getPosts(String chatboardId) async {
     try {
       print('Fetching posts for chatboard: $chatboardId');
-      final url = '/posts?chatboard_id=$chatboardId';
+      final url = '/posts?chatboard_id=$chatboardId&include_comment_count=true';
       print('Request URL: $url');
       
       final response = await _dio.get(url);

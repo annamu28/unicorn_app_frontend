@@ -3,9 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/user.dart';
 import '../../../providers/user_provider.dart';
-import '../../../providers/pending_users_provider.dart';
-import '../../../providers/chatboard_provider.dart';
-import '../../chatboard/widgets/pending_users.dart';
 import '../../panels/attendance/attendance_panel_view.dart';
 import '../../panels/verification/verification_view.dart';
 import '../../panels/questionnaire/questionnaire_panel_view.dart';
@@ -21,8 +18,6 @@ class TeacherTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(userProvider);
-    final pendingUsersAsync = ref.watch(pendingUsersProvider(chatboardId));
-    final chatboardService = ref.watch(chatboardServiceProvider);
 
     return userAsync.when(
       data: (user) {
@@ -138,59 +133,6 @@ class TeacherTab extends ConsumerWidget {
                     ),
                   ],
                 ),
-                // Pending Users section
-                const SizedBox(height: 24),
-                Text(
-                  'Pending Users',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                pendingUsersAsync.when(
-                  data: (pendingUsers) {
-                    return PendingUsers(
-                      chatboardId: chatboardId,
-                      pendingUsers: pendingUsers,
-                      onApprove: (pendingUser) async {
-                        try {
-                          await chatboardService.approveUser(chatboardId, pendingUser.userId.toString());
-                          ref.invalidate(pendingUsersProvider(chatboardId));
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error approving user: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      onReject: (pendingUser) async {
-                        try {
-                          await chatboardService.rejectUser(chatboardId, pendingUser.userId.toString());
-                          ref.invalidate(pendingUsersProvider(chatboardId));
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error rejecting user: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    );
-                  },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (error, _) => Center(
-                    child: Text('Error loading pending users: $error'),
-                  ),
-                ),
               ],
             ),
           ),
@@ -198,7 +140,7 @@ class TeacherTab extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
-        child: Text('Error loading user data: $error'),
+        child: Text('Error: $error'),
       ),
     );
   }

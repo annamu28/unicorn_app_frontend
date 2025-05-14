@@ -42,7 +42,7 @@ class CommentService {
     required String content,
   }) async {
     try {
-      // Create the comment directly without permission checks
+      // Create the comment
       final response = await _dio.post(
         '/comments',
         data: {
@@ -57,19 +57,15 @@ class CommentService {
         throw Exception('Received null response when creating comment');
       }
 
-      // Get current comment count
+      // Update the post's comment count
       try {
-        final postResponse = await _dio.get('/posts/$postId');
-        final currentCount = (postResponse.data['comment_count'] as num?)?.toInt() ?? 0;
-        
-        // Update the post's comment count
         await _dio.patch(
-          '/posts/$postId',
+          '/posts/$postId/increment-comments',
           data: {
-            'comment_count': currentCount + 1, // Increment by 1
+            'increment': 1,
           },
         );
-        print('Updated post comment count from $currentCount to ${currentCount + 1}');
+        print('Updated post comment count');
       } catch (e) {
         print('Error updating post comment count: $e');
         // Don't throw here, we still want to return the created comment

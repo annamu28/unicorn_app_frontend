@@ -152,14 +152,22 @@ class _ChatboardViewState extends ConsumerState<ChatboardView> {
                       : Container(),
                   ),
                 ),
-                body: isSpecialRole 
-                  ? TabBarView(
-                      children: [
-                        PostsTab(chatboardId: widget.chatboardId),
-                        TeacherTab(chatboardId: widget.chatboardId),
-                      ],
-                    )
-                  : PostsTab(chatboardId: widget.chatboardId),
+                body: SafeArea(
+                  child: isSpecialRole 
+                    ? Column(
+                        children: [
+                          Expanded(
+                            child: TabBarView(
+                              children: [
+                                PostsTab(chatboardId: widget.chatboardId),
+                                TeacherTab(chatboardId: widget.chatboardId),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : PostsTab(chatboardId: widget.chatboardId),
+                ),
                 floatingActionButton: FloatingActionButton(
                   onPressed: () {
                     context.push('/add-post/${widget.chatboardId}');
